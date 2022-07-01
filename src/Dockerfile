@@ -28,7 +28,7 @@ RUN apk add --update --no-cache \
             curl \
             tini \
             python3 \
-            g++ snappy-dev \
+            java-snappy-native \
             openjdk8-jre 
 
 ENV LANG=en_US.UTF-8 \
