@@ -1,0 +1,11 @@
+version: "2"
+
+services:
+
+  spark:
+    build:
+      context: src
+      args:
+        SPARK_VERSION: 3.2.1
+        HADOOP_VERSION: 3.2
+        SPARK_CDN: https://dlcdn.apache.org/spark
