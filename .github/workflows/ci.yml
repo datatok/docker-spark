@@ -18,11 +18,11 @@ jobs:
       matrix:
         spark_version: [3.2.1, 3.3.0]
         hadoop_version: [3, 3.2]
-      include:
-      - spark_version: 3.2.1
-        hadoop_version: 3.2
-      - spark_version: 3.3.0
-        hadoop_version: 3
+        include:
+        - spark_version: 3.2.1
+          hadoop_version: 3.2
+        - spark_version: 3.3.0
+          hadoop_version: 3
     
     env:
       REGISTRY: ghcr.io
@@ -60,7 +60,7 @@ jobs:
         with:
           context: src
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ spark_version }}-${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
