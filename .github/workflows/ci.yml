@@ -50,6 +50,9 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=edge,prefix=${{ matrix.spark_version }}-,branch=main
+            type=ref,enable=true,prefix=${{ matrix.spark_version }}-,event=tag
 
       -
         name: Build and push
@@ -58,7 +61,7 @@ jobs:
         with:
           context: src
           push: true
-          tags: "${{ matrix.spark_version }}-${{ steps.meta.outputs.tags }}"
+          tags: "${{ steps.meta.outputs.tags }}"
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
