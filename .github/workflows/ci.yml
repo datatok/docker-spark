@@ -60,10 +60,10 @@ jobs:
         with:
           context: src
           push: true
-          tags: ${{ spark_version }}-${{ steps.meta.outputs.tags }}
+          tags: "${{ matrix.spark_version }}-${{ steps.meta.outputs.tags }}"
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-            SPARK_VERSION=${{ spark_version }}
-            HADOOP_VERSION=${{ hadoop_version }}
+            SPARK_VERSION=${{ matrix.spark_version }}
+            HADOOP_VERSION=${{ matrix.hadoop_version }}
             SPARK_CDN=https://dlcdn.apache.org/spark
