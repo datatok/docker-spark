@@ -51,8 +51,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=edge,prefix=${{ matrix.spark_version }}-,branch=main
-            type=ref,enable=true,prefix=${{ matrix.spark_version }}-,event=tag
+            type=edge,prefix=v${{ matrix.spark_version }}-,branch=main
+            type=ref,enable=true,prefix=v${{ matrix.spark_version }}-,event=tag
 
       -
         name: Build and push
