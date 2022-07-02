@@ -39,6 +39,11 @@ ENV LANG=en_US.UTF-8 \
 
 ENV PATH="/opt/python/bin:${JAVA_HOME}/bin:${SPARK_HOME}/bin:${SPARK_HOME}/sbin:$PATH"
 
+# Install glibc for Alpine
+RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+    wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.35-r0/glibc-2.35-r0.apk && \
+    apk add glibc-2.35-r0.apk
+
 # get spark artifacts
 COPY --from=spark /spark /opt/spark
 
