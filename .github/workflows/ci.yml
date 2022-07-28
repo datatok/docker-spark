@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         include:
-        - spark_version: 3.2.1
+        - spark_version: 3.2.2
           hadoop_version: 3.2
         - spark_version: 3.3.0
           hadoop_version: 3
