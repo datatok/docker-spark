@@ -1,8 +1,13 @@
-FROM alpine:3.16 as base
+FROM ubuntu:22.10 as base
+
+RUN apt-get update -y && \
+    apt-get install -y -q \
+      curl \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV HOME="/" \
     OS_ARCH="amd64" \
-    OS_FLAVOUR="alpine-3" \
+    OS_FLAVOUR="ubuntu" \
     OS_NAME="linux" \
     SPARK_USER_UID=1000 \
     SPARK_USER_NAME=spark \
@@ -14,53 +19,49 @@ ARG SPARK_VERSION=3.2.1
 ARG HADOOP_VERSION=3.2
 ARG SPARK_CDN=https://dlcdn.apache.org/spark
 
-RUN apk add --update --no-cache wget
+RUN curl -sL >spark.tgz ${SPARK_CDN}/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
 
-RUN wget --quiet ${SPARK_CDN}/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
-      && tar -xzf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
+RUN tar -xzf spark.tgz \
       && mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} spark \
-      && rm -rf spark/examples spark/data \
-      && rm spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz
+      && rm -rf spark/examples spark/data
 
 FROM base
 
-RUN apk add --update --no-cache \  
-            bash \
-            curl \
-            tini \
-            python3 \
-            java-snappy-native \
-            openjdk8-jre 
+RUN apt-get update -y && \
+    apt-get install -y -q \
+      tini \
+      python3 \
+      python3-pip \
+      openjdk-11-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8 \
-    JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk \
-    PYTHONPATH="/opt/spark/python/:$PYTHONPATH" \
+ENV HOME="${SPARK_HOME}" \
+    PYTHONPATH="/opt/spark/python/lib/py4j-0.10.9.5-src.zip:/opt/spark/python/lib/pyspark.zip:$PYTHONPATH" \
     SPARK_WORK_DIR="${SPARK_HOME}/work"
 
-ENV PATH="/opt/python/bin:${JAVA_HOME}/bin:${SPARK_HOME}/bin:${SPARK_HOME}/sbin:$PATH"
-
-# Install glibc for Alpine
-RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
-    wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.35-r0/glibc-2.35-r0.apk && \
-    apk add glibc-2.35-r0.apk
+ENV PATH="/opt/python/bin:${JAVA_HOME}/bin:${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${SPARK_HOME}/.local/bin:$PATH"
 
 # get spark artifacts
-COPY --from=spark /spark /opt/spark
+COPY --chown=${SPARK_USER_UID}:1000 --from=spark /spark /opt/spark
 
 # add entrypoint script
 COPY entrypoint.sh /bin/
 
 # add spark user
-RUN adduser --home ${SPARK_HOME} --no-create-home --disabled-password --uid ${SPARK_USER_UID} ${SPARK_USER_NAME} && \
-    chown -R ${SPARK_USER_UID} ${SPARK_HOME} && \
-    mkdir ${SPARK_WORK_DIR} && \
-    chgrp root /etc/passwd && chmod ug+rw /etc/passwd && \
+RUN groupadd -g 1000 spark && \
+    useradd --no-create-home --home-dir ${SPARK_HOME} --uid ${SPARK_USER_UID} --gid 1000 -G sudo ${SPARK_USER_NAME} && \
+    chgrp root /etc/passwd && chmod ug+rw /etc/passwd
+
+# Specify the User that the actual main process will run as
+USER ${SPARK_USER_UID}
+
+# Create work dir
+RUN mkdir ${SPARK_WORK_DIR} && \
     chmod g+w ${SPARK_WORK_DIR}
 
 WORKDIR ${SPARK_WORK_DIR}
 
-# Specify the User that the actual main process will run as
-USER ${SPARK_USER_UID}
+# add some common python libs
+RUN pip3 install --no-cache-dir --user requests pandas
 
 ENTRYPOINT [ "/bin/entrypoint.sh" ]
